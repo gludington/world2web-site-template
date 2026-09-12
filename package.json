@@ -1,0 +1,21 @@
+{
+  "name": "world2web-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && pagefind --site dist",
+    "preview": "astro preview",
+    "preview:search": "npm run build && astro preview",
+    "sync": "astro sync",
+    "ingest": "node scripts/ingest.js"
+  },
+  "dependencies": {
+    "astro": "^7.2.4"
+  },
+  "devDependencies": {
+    "pagefind": "^1.5.2",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,192 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Layout from "../../../layouts/Layout.astro";
+import { getSiteConfig } from "../../../lib/config";
+import { getPublishedPosts } from "../../../lib/posts";
+import {
+  postRoute,
+  authorRoute,
+  blogRoute,
+  rootCrumbs,
+  sectionRoute,
+  type Crumb,
+  formatDate,
+} from "../../../lib/routes";
+import {
+  toBlogInfos,
+  buildSectionTree,
+  blogsInSubtree,
+  sortPostsForBlog,
+  type BlogInfo,
+  type SectionInfo,
+  type BlogWithSubPath,
+} from "../../../lib/sections";
+import ContentPanel from "../../../components/ContentPanel.astro"; // Swapped sub-components out for ContentPanel
+import Pagination from "../../../components/Pagination.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+
+type PageProps =
+  | { kind: "blog"; blog: BlogInfo; pagePosts: CollectionEntry<"posts">[]; pageNum: number; totalPages: number }
+  | { kind: "section"; label: string; ancestorCrumbs: Crumb[]; childSections: SectionInfo[]; blogEntries: BlogWithSubPath[]; };
+
+export async function getStaticPaths() {
+  const PAGE_SIZE = 10;
+  const { blogsSegment } = getSiteConfig();
+  const posts = await getPublishedPosts();
+  const blogs = toBlogInfos(posts);
+  const blogByUuid = new Map(blogs.map((b) => [b.blogUuid, b] as const));
+  const postsByBlogUuid = new Map<string, CollectionEntry<"posts">[]>();
+  
+  for (const post of posts) {
+    if (!postsByBlogUuid.has(post.data.blogUuid)) postsByBlogUuid.set(post.data.blogUuid, []);
+    postsByBlogUuid.get(post.data.blogUuid)!.push(post);
+  }
+
+  const blogSlugs = new Set(blogs.map((b) => b.blogSlug));
+  const sectionsByWorld = buildSectionTree(blogs);
+  const paths: { params: { world: string; section: string; blog: string }; props: PageProps }[] = [];
+
+  for (const [blogUuid, blogPosts] of postsByBlogUuid) {
+    const blog = blogByUuid.get(blogUuid)!;
+    const sorted = sortPostsForBlog(blogPosts, blog.postOrder);
+
+    const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      const pagePosts = sorted.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
+      paths.push({
+        params: {
+          world: blog.world,
+          section: blogsSegment,
+          blog: pageNum === 1 ? blog.blogSlug : `${blog.blogSlug}/${pageNum}`,
+        },
+        props: { kind: "blog", blog, pagePosts, pageNum, totalPages },
+      });
+    }
+  }
+
+  for (const [world, sections] of sectionsByWorld) {
+    for (const [prefixSlug, info] of sections) {
+      if (blogSlugs.has(prefixSlug)) continue;
+      const slugParts = prefixSlug.split("/");
+      const ancestorCrumbs: Crumb[] = slugParts.slice(0, -1).map((_, i) => {
+        const slug = slugParts.slice(0, i + 1).join("/");
+        return { label: sections.get(slug)?.label ?? slug, href: sectionRoute(world, slug) };
+      });
+      const childSections: SectionInfo[] = Array.from(info.childSlugs).map((slug) => ({
+        world,
+        slug,
+        label: sections.get(slug)?.label ?? slug.split("/").pop()!,
+      }));
+      const blogEntries = blogsInSubtree(sections, prefixSlug);
+      
+      paths.push({
+        params: { world, section: blogsSegment, blog: prefixSlug },
+        props: { kind: "section", label: info.label, ancestorCrumbs, childSections, blogEntries },
+      });
+    }
+  }
+  return paths;
+}
+
+const props = Astro.props as PageProps;
+const siteName = getSiteConfig().siteName;
+
+// --- Evaluation Logic Block for the "blog" kind branch ---
+const blogCrumbs = props.kind === "blog" ? rootCrumbs(props.blog) : [];
+const blogBase = props.kind === "blog" ? blogRoute(props.blog) : "";
+const prevUrl = props.kind === "blog" && props.pageNum > 1 ? props.pageNum === 2 ? blogBase : `${blogBase}${props.pageNum - 1}/` : null;
+const nextUrl = props.kind === "blog" && props.pageNum < props.totalPages ? `${blogBase}${props.pageNum + 1}/` : null;
+
+// --- Mapping Data Sets for the "blog" display branch ---
+const postItems = props.kind === "blog" ? props.pagePosts.map((post) => ({
+  title: post.data.title,
+  href: postRoute(post.data),
+  // Per-post author -- each post in this blog's own list can have a
+  // different one (Post Settings' override), so this can't be hoisted to
+  // a single line above the list the way it used to be. See lib/sections.ts's
+  // BlogInfo doc comment for why that blog-level line was removed.
+  authorName: post.data.author.name,
+  authorHref: authorRoute(post.data),
+  authorImage: post.data.author.image,
+  dateLabel: formatDate(post.data.publishedAt),
+  frontImage: post.data.frontImage
+})) : [];
+
+// --- Mapping Data Sets for the "section" display branch ---
+const sectionItems = props.kind === "section" ? props.childSections.map((s) => ({
+  title: s.label,
+  href: sectionRoute(s.world, s.slug),
+  metaType: "section" as const
+})) : [];
+
+const sortedBlogEntries = props.kind === "section" ? [...props.blogEntries].sort((a, b) => 
+  a.blog.blogTitle.localeCompare(b.blog.blogTitle)
+) : [];
+
+const blogEntriesItems = props.kind === "section" ? sortedBlogEntries.map(({ blog, subPath }) => ({
+  title: blog.blogTitle,
+  href: blogRoute(blog),
+  subLabels: subPath
+})) : [];
+---
+
+{ props.kind === "blog" ? (
+  <Layout title={props.blog.blogTitle}>
+    <Breadcrumbs 
+      siteName={siteName} 
+      crumbs={blogCrumbs} 
+      currentLabel={props.blog.blogTitle} 
+  />  
+    <h1>{props.blog.blogTitle}</h1>
+
+    {/* No blog-level author line here -- a blog's posts can each have their
+        own author (Post Settings' override), so there's no single reliable
+        author to attribute the blog itself to. See each post's own byline
+        in the list below instead. */}
+
+    {/* Handled using ContentPanel — panel title is hidden/empty since h1 acts as the header */}
+    <ContentPanel title="" items={postItems} />
+
+   {props.totalPages > 1 && (
+  <Pagination 
+    prevUrl={prevUrl} 
+    nextUrl={nextUrl} 
+    pageNum={props.pageNum} 
+    totalPages={props.totalPages} 
+  />
+)}
+  </Layout>
+) : (
+  <Layout title={props.label}>
+        <Breadcrumbs 
+      siteName={siteName} 
+      crumbs={blogCrumbs} 
+      currentLabel={props.label} 
+/>    
+    
+    <h1>{props.label}</h1>
+    
+    {/* Collapsed layout panels */}
+    <ContentPanel title="Sections" items={sectionItems} />
+    <ContentPanel title="Blogs" items={blogEntriesItems} />
+
+    {props.childSections.length === 0 && props.blogEntries.length === 0 && (
+      <p class="empty-state">Nothing here yet.</p>
+    )}
+  </Layout>
+) }
+
+<style>
+  /* Local adjustments keeping the visual architecture balanced */
+  h1 {
+    margin-top: 1rem;
+    /* Was 0.5rem plus a separate .meta rule's 3rem when a blog-level
+       author line sat between the title and the post list -- carries that
+       same total gap alone now that the line is gone. */
+    margin-bottom: 3rem;
+  }
+  /* Hides the duplicate header border when ContentPanel is used directly under an H1 */
+  :global(h1 + .panel > .panel-title) {
+    display: none;
+  }
+</style>
