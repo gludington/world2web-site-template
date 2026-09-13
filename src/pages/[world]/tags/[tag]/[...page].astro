@@ -4,7 +4,7 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../../../../layouts/Layout.astro";
 import { getSiteConfig } from "../../../../lib/config";
 import { getPublishedPosts } from "../../../../lib/posts";
-import { postRoute, authorRoute, blogRoute, formatDate } from "../../../../lib/routes";
+import { postRoute, authorRoute, journalRoute, formatDate } from "../../../../lib/routes";
 import { slugifyTag } from "../../../../lib/tags";
 import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
 import ContentPanel from "../../../../components/ContentPanel.astro";
@@ -14,9 +14,9 @@ const siteName = getSiteConfig().siteName;
 
 // Every post tagged with a given tag, within one world. Tags aren't
 // pre-slugged in frontmatter (they're a freeform list, unlike
-// blogSlug/authorSlug) so slugifyTag() is applied here and, identically, on
+// journalSlug/authorSlug) so slugifyTag() is applied here and, identically, on
 // each post page's tag links -- see lib/tags.ts. A post can carry more than
-// one tag, so unlike the blog/author archives, one post fans out into
+// one tag, so unlike the journal/author archives, one post fans out into
 // multiple groups here.
 interface TagInfo {
   world: string;
@@ -62,7 +62,7 @@ const taggedItems = page.data.map((post) => ({
   authorName: post.data.author.name,
   authorHref: authorRoute(post.data),
   authorImage: post.data.author.image,
-  subLabels: [post.data.blogTitle],
+  subLabels: [post.data.journalTitle],
   dateLabel: formatDate(post.data.publishedAt),
   frontImage: post.data.frontImage
 }));

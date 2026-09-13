@@ -4,18 +4,18 @@ import type { CollectionEntry } from "astro:content";
 import Layout from "../../../../layouts/Layout.astro";
 import { getSiteConfig } from "../../../../lib/config";
 import { getPublishedPosts } from "../../../../lib/posts";
-import { postRoute, blogRoute, formatDate } from "../../../../lib/routes";
+import { postRoute, journalRoute, formatDate } from "../../../../lib/routes";
 import Breadcrumbs from "../../../../components/Breadcrumbs.astro";
 import ContentPanel from "../../../../components/ContentPanel.astro";
 import Pagination from "../../../../components/Pagination.astro";
 
 const siteName = getSiteConfig().siteName;
 
-// Every post by a given author identity, across every blog (journal entry)
+// Every post by a given author identity, across every journal (journal entry)
 // published under that display name -- grouped by authorSlug, which is
-// deliberately shared (not disambiguated) across blogs with the same
-// author name, unlike blogSlug. See routes.ts and render.js's assignSlugs.
-// The single-blog archive lives at pages/[world]/[section]/[...blog].astro.
+// deliberately shared (not disambiguated) across journals with the same
+// author name, unlike journalSlug. See routes.ts and render.js's assignSlugs.
+// The single-journal archive lives at pages/[world]/[section]/[...journal].astro.
 interface AuthorInfo {
   world: string;
   authorSlug: string;
@@ -76,7 +76,7 @@ const { page } = Astro.props as { page: Page<CollectionEntry<"posts">> };
 const authorItems = page.data.map((post) => ({
   title: post.data.title,
   href: postRoute(post.data),
-  subLabels: [post.data.blogTitle],
+  subLabels: [post.data.journalTitle],
   dateLabel: formatDate(post.data.publishedAt),
   frontImage: post.data.frontImage,
 }));

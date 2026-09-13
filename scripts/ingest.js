@@ -45,7 +45,7 @@ function slugify(str) {
   return slug || "untitled";
 }
 
-/** Slugifies a "/"-delimited path (a blog's root override or its default
+/** Slugifies a "/"-delimited path (a journal's root override or its default
  * folder-hierarchy path), segment by segment -- "Arc 1/Session Notes" ->
  * "arc-1/session-notes". Leading/trailing/doubled slashes collapse away
  * (split -> filter(Boolean)). Empty/missing input -> "". */
@@ -59,38 +59,38 @@ function slugifyPath(rawPath) {
 }
 
 /** Assigns distinct slugs, deliberately not conflated:
- *  - blog._slug: unique per journal entry (disambiguated by blog uuid on
- *    collision), built from the blog's root (a slugified "/"-path prefix,
- *    empty if none) followed by a slug of the blog's own title. Drives the
- *    single-blog archive URL/permalink and the content/ directory name --
- *    two different blogs must never collide here, even if they share a
+ *  - journal._slug: unique per journal entry (disambiguated by journal uuid on
+ *    collision), built from the journal's root (a slugified "/"-path prefix,
+ *    empty if none) followed by a slug of the journal's own title. Drives the
+ *    single-journal archive URL/permalink and the content/ directory name --
+ *    two different journals must never collide here, even if they share a
  *    root.
  *  - post._authorSlug: based on the displayed author name of that POST
- *    specifically -- not a blog-wide value, since a post can override its
- *    blog's author (see the Foundry module's collector.js's
+ *    specifically -- not a journal-wide value, since a post can override its
+ *    journal's author (see the Foundry module's collector.js's
  *    resolvePostAuthor) and needs to land on its own author's archive
- *    page, not its blog's default one. NOT disambiguated on collision --
+ *    page, not its journal's default one. NOT disambiguated on collision --
  *    this is what lets every post sharing the same author name merge onto
- *    one cross-blog author archive page, whether that name comes from the
- *    same blog or not. Collision here is the intended behavior, not a bug.
- * Also assigns a unique slug per post within each blog (disambiguated by
+ *    one cross-journal author archive page, whether that name comes from the
+ *    same journal or not. Collision here is the intended behavior, not a bug.
+ * Also assigns a unique slug per post within each journal (disambiguated by
  * page uuid). */
-function assignSlugs(blogs) {
-  const seenBlogSlugs = new Map();
-  for (const blog of blogs) {
-    const rootSlug = slugifyPath(blog.root);
-    const titleSlug = slugify(blog.title);
+function assignSlugs(journals) {
+  const seenJournalSlugs = new Map();
+  for (const journal of journals) {
+    const rootSlug = slugifyPath(journal.root);
+    const titleSlug = slugify(journal.title);
     let leaf = titleSlug;
     let combined = rootSlug ? `${rootSlug}/${leaf}` : leaf;
-    if (seenBlogSlugs.has(combined)) {
-      leaf = `${titleSlug}-${blog.uuid.split(".").pop().slice(-6).toLowerCase()}`;
+    if (seenJournalSlugs.has(combined)) {
+      leaf = `${titleSlug}-${journal.uuid.split(".").pop().slice(-6).toLowerCase()}`;
       combined = rootSlug ? `${rootSlug}/${leaf}` : leaf;
     }
-    seenBlogSlugs.set(combined, blog.uuid);
-    blog._slug = combined;
+    seenJournalSlugs.set(combined, journal.uuid);
+    journal._slug = combined;
 
     const seenPostSlugs = new Map();
-    for (const post of blog.posts) {
+    for (const post of journal.posts) {
       const postBase = slugify(post.title);
       let postSlug = postBase;
       if (seenPostSlugs.has(postSlug)) {
@@ -109,33 +109,33 @@ function toFrontmatter(obj) {
   return `---\n${JSON.stringify(obj, null, 2)}\n---\n`;
 }
 
-function postFrontmatter(worldSlug, blog, post) {
+function postFrontmatter(worldSlug, journal, post) {
   return {
     foundryUuid: post.uuid,
     world: worldSlug,
-    blogUuid: blog.uuid,
-    blogTitle: blog.title,
-    blogSlug: blog._slug,
+    journalUuid: journal.uuid,
+    journalTitle: journal.title,
+    journalSlug: journal._slug,
     // Raw (unslugified) root text, e.g. "PCs/Act 1" -- kept alongside the
-    // already-slugified prefix baked into blogSlug so the site can render
+    // already-slugified prefix baked into journalSlug so the site can render
     // human-readable breadcrumb/section labels ("Act 1") rather than their
-    // URL slugs ("act-1"). null when the blog has no root at all.
-    root: blog.root ?? null,
+    // URL slugs ("act-1"). null when the journal has no root at all.
+    root: journal.root ?? null,
     title: post.title,
     slug: post._slug,
     // post.author/post.tags: already fully resolved by the Foundry
     // module's collector.js with inheritance baked in (a post with no
-    // override of its own gets its blog's own author/tags verbatim; one
+    // override of its own gets its journal's own author/tags verbatim; one
     // with an override gets that instead) -- so this is always the right
-    // value to write, never blog.author/blog.tags directly.
+    // value to write, never journal.author/journal.tags directly.
     author: post.author,
     authorSlug: post._authorSlug,
     tags: post.tags ?? [],
     frontImage: post.frontImage ?? "",
-    // This blog's own post-archive order ("manual"/"newest"/"oldest") --
+    // This journal's own post-archive order ("manual"/"newest"/"oldest") --
     // every other listing site-wide (recent posts, author/tag archives)
     // always shows newest-published-first regardless of this value.
-    postOrder: ["newest", "oldest"].includes(blog.postOrder) ? blog.postOrder : "manual",
+    postOrder: ["newest", "oldest"].includes(journal.postOrder) ? journal.postOrder : "manual",
     // Foundry's own page.sort -- only consumed site-side when postOrder is
     // "manual". See the Foundry module's collector.js's collectPost() for
     // why this is always collected regardless of postOrder.
@@ -150,14 +150,14 @@ function postFrontmatter(worldSlug, blog, post) {
   };
 }
 
-async function writeBlog(contentDir, worldSlug, blog) {
-  const dir = path.join(contentDir, "worlds", worldSlug, "blogs", blog._slug);
+async function writeJournal(contentDir, worldSlug, journal) {
+  const dir = path.join(contentDir, "worlds", worldSlug, "journals", journal._slug);
   await mkdir(dir, { recursive: true });
 
-  for (const post of blog.posts) {
+  for (const post of journal.posts) {
     await writeFile(
       path.join(dir, `${post._slug}.md`),
-      `${toFrontmatter(postFrontmatter(worldSlug, blog, post))}\n${post.html}\n`,
+      `${toFrontmatter(postFrontmatter(worldSlug, journal, post))}\n${post.html}\n`,
     );
   }
 }
@@ -180,24 +180,24 @@ async function main() {
   const payload = JSON.parse(raw);
 
   const worldSlug = slugify(payload.world?.title || payload.world?.id || "world");
-  const blogs = payload.blogs ?? [];
+  const journals = payload.journals ?? [];
 
-  assignSlugs(blogs);
+  assignSlugs(journals);
 
-  const blogsDir = path.join(contentDir, "worlds", worldSlug, "blogs");
-  if (existsSync(blogsDir)) {
-    await rm(blogsDir, { recursive: true, force: true });
+  const journalsDir = path.join(contentDir, "worlds", worldSlug, "journals");
+  if (existsSync(journalsDir)) {
+    await rm(journalsDir, { recursive: true, force: true });
   }
-  await mkdir(blogsDir, { recursive: true });
+  await mkdir(journalsDir, { recursive: true });
 
   let postCount = 0;
-  for (const blog of blogs) {
-    await writeBlog(contentDir, worldSlug, blog);
-    postCount += blog.posts.length;
+  for (const journal of journals) {
+    await writeJournal(contentDir, worldSlug, journal);
+    postCount += journal.posts.length;
   }
 
   // content/site-config.json: read by src/lib/config.ts at Astro build time
-  // (theme, site name, blogs URL segment, allowThemeOverride). The
+  // (theme, site name, journals URL segment, allowThemeOverride). The
   // direct-to-GitHub path (the Foundry module's main.js's publishToGitHub
   // -> render.js's buildSiteConfigFile) writes this too; this is the
   // equivalent for the local "Dev Sync" + ingest.js path, which only ever
@@ -209,7 +209,7 @@ async function main() {
       {
         theme: siteConfig.theme || "default",
         siteName: siteConfig.siteName || "World2Web",
-        blogsSegment: siteConfig.blogsSegment || "journals",
+        journalsSegment: siteConfig.journalsSegment || "journals",
         allowThemeOverride: !!siteConfig.allowThemeOverride,
       },
       null,
@@ -217,7 +217,7 @@ async function main() {
     )}\n`,
   );
 
-  console.log(`world2web ingest: wrote ${postCount} post(s) across ${blogs.length} blog(s) to ${blogsDir}`);
+  console.log(`world2web ingest: wrote ${postCount} post(s) across ${journals.length} journal(s) to ${journalsDir}`);
 }
 
 main().catch((err) => {

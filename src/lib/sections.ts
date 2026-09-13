@@ -1,23 +1,23 @@
 import type { CollectionEntry } from "astro:content";
 
 // Shared between the homepage (the "root level" -- depth 0, no root prefix
-// at all) and every section page (pages/blogs/[world]/[...blog].astro,
+// at all) and every section page (pages/journals/[world]/[...journal].astro,
 // deeper levels) so there's exactly one implementation of "walk every
-// blog's root path and figure out what lives at each level," not two
+// journal's root path and figure out what lives at each level," not two
 // independently-maintained copies.
-// Deliberately no author fields here: a blog's posts can each have their
+// Deliberately no author fields here: a journal's posts can each have their
 // own author (Post Settings' author override, see the Foundry module's
-// collector.js), so there's no single reliable "the blog's author" to
+// collector.js), so there's no single reliable "the journal's author" to
 // aggregate -- and this used to pick one arbitrarily (whichever post
-// toBlogInfos() below happened to see first for a given blogUuid), which
+// toJournalInfos() below happened to see first for a given journalUuid), which
 // silently stopped being representative once that override existed.
-// Author is shown per-post everywhere instead (already accurate); a blog
-// itself just isn't attributed to anyone in blog-level listings.
-export interface BlogInfo {
-  blogUuid: string;
+// Author is shown per-post everywhere instead (already accurate); a journal
+// itself just isn't attributed to anyone in journal-level listings.
+export interface JournalInfo {
+  journalUuid: string;
   world: string;
-  blogSlug: string;
-  blogTitle: string;
+  journalSlug: string;
+  journalTitle: string;
   root: string | null;
   postOrder: "newest" | "oldest" | "manual";
 }
@@ -30,21 +30,21 @@ export interface SectionInfo {
 
 export interface SectionNode {
   label: string;
-  blogs: BlogInfo[];
+  journals: JournalInfo[];
   childSlugs: Set<string>;
 }
 
-/** Groups a flat post list into one BlogInfo per blogUuid (posts.length
- * copies of otherwise-identical blog metadata collapse into one entry). */
-export function toBlogInfos(posts: CollectionEntry<"posts">[]): BlogInfo[] {
-  const byUuid = new Map<string, BlogInfo>();
+/** Groups a flat post list into one JournalInfo per journalUuid (posts.length
+ * copies of otherwise-identical journal metadata collapse into one entry). */
+export function toJournalInfos(posts: CollectionEntry<"posts">[]): JournalInfo[] {
+  const byUuid = new Map<string, JournalInfo>();
   for (const post of posts) {
-    if (byUuid.has(post.data.blogUuid)) continue;
-    byUuid.set(post.data.blogUuid, {
-      blogUuid: post.data.blogUuid,
+    if (byUuid.has(post.data.journalUuid)) continue;
+    byUuid.set(post.data.journalUuid, {
+      journalUuid: post.data.journalUuid,
       world: post.data.world,
-      blogSlug: post.data.blogSlug,
-      blogTitle: post.data.blogTitle,
+      journalSlug: post.data.journalSlug,
+      journalTitle: post.data.journalTitle,
       root: post.data.root,
       postOrder: post.data.postOrder,
     });
@@ -52,11 +52,11 @@ export function toBlogInfos(posts: CollectionEntry<"posts">[]): BlogInfo[] {
   return Array.from(byUuid.values());
 }
 
-/** A blog's posts in the same order its own archive page displays them --
+/** A journal's posts in the same order its own archive page displays them --
  * shared so that order (which drives that archive's pagination) and prev/
  * next post navigation never silently disagree with each other. Mutates
  * nothing; returns a new array. */
-export function sortPostsForBlog<T extends CollectionEntry<"posts">>(posts: T[], postOrder: BlogInfo["postOrder"]): T[] {
+export function sortPostsForJournal<T extends CollectionEntry<"posts">>(posts: T[], postOrder: JournalInfo["postOrder"]): T[] {
   return [...posts].sort((a, b) => {
     if (postOrder === "oldest") return a.data.publishedAt - b.data.publishedAt;
     if (postOrder === "manual") return a.data.sortIndex - b.data.sortIndex;
@@ -64,34 +64,34 @@ export function sortPostsForBlog<T extends CollectionEntry<"posts">>(posts: T[],
   });
 }
 
-/** Builds, per world, a map of every root-prefix slug -> {label, blogs,
- * childSlugs}, by walking every blog's root path. A blog with no root at
+/** Builds, per world, a map of every root-prefix slug -> {label, journals,
+ * childSlugs}, by walking every journal's root path. A journal with no root at
  * all contributes nothing here (it belongs at the root/depth-0 level,
  * which this map doesn't represent -- callers handle that case directly by
- * filtering for `root === null`). Label is first-seen-wins if two blogs
+ * filtering for `root === null`). Label is first-seen-wins if two journals
  * disagree on a segment's spelling/casing. */
-export function buildSectionTree(blogs: BlogInfo[]): Map<string, Map<string, SectionNode>> {
+export function buildSectionTree(journals: JournalInfo[]): Map<string, Map<string, SectionNode>> {
   const sectionsByWorld = new Map<string, Map<string, SectionNode>>();
 
-  for (const blog of blogs) {
-    if (!blog.root) continue;
-    const labels = blog.root
+  for (const journal of journals) {
+    if (!journal.root) continue;
+    const labels = journal.root
       .split("/")
       .map((s) => s.trim())
       .filter(Boolean);
     if (labels.length === 0) continue;
-    const slugParts = blog.blogSlug.split("/").slice(0, labels.length);
+    const slugParts = journal.journalSlug.split("/").slice(0, labels.length);
 
-    if (!sectionsByWorld.has(blog.world)) sectionsByWorld.set(blog.world, new Map());
-    const sections = sectionsByWorld.get(blog.world)!;
+    if (!sectionsByWorld.has(journal.world)) sectionsByWorld.set(journal.world, new Map());
+    const sections = sectionsByWorld.get(journal.world)!;
 
     for (let depth = 1; depth <= labels.length; depth++) {
       const prefixSlug = slugParts.slice(0, depth).join("/");
       if (!sections.has(prefixSlug)) {
-        sections.set(prefixSlug, { label: labels[depth - 1], blogs: [], childSlugs: new Set() });
+        sections.set(prefixSlug, { label: labels[depth - 1], journals: [], childSlugs: new Set() });
       }
       if (depth === labels.length) {
-        sections.get(prefixSlug)!.blogs.push(blog);
+        sections.get(prefixSlug)!.journals.push(journal);
       } else {
         sections.get(prefixSlug)!.childSlugs.add(slugParts.slice(0, depth + 1).join("/"));
       }
@@ -114,30 +114,30 @@ export function topLevelSections(sectionsByWorld: Map<string, Map<string, Sectio
   return result;
 }
 
-export interface BlogWithSubPath {
-  blog: BlogInfo;
-  /** Labels of the sections between the queried level and this blog --
-   * empty when the blog sits directly at the queried level. E.g. querying
-   * "pcs" for a blog rooted at "PCs/Act 1" yields subPath: ["Act 1"]. */
+export interface JournalWithSubPath {
+  journal: JournalInfo;
+  /** Labels of the sections between the queried level and this journal --
+   * empty when the journal sits directly at the queried level. E.g. querying
+   * "pcs" for a journal rooted at "PCs/Act 1" yields subPath: ["Act 1"]. */
   subPath: string[];
 }
 
-/** Every blog at the given section prefix *or in any section beneath it*,
- * recursively -- unlike a section's own `blogs` (exact level only), this
+/** Every journal at the given section prefix *or in any section beneath it*,
+ * recursively -- unlike a section's own `journals` (exact level only), this
  * is what actually answers "what's in this category, including
  * sub-categories," which is usually the more useful view on a section
  * page: a section with real nesting (e.g. "PCs" containing "PCs/Act 1",
- * "PCs/Act 2") often has few or no blogs directly on it, with everything
+ * "PCs/Act 2") often has few or no journals directly on it, with everything
  * actually living one or more levels deeper. */
-export function blogsInSubtree(sections: Map<string, SectionNode>, prefixSlug: string): BlogWithSubPath[] {
+export function journalsInSubtree(sections: Map<string, SectionNode>, prefixSlug: string): JournalWithSubPath[] {
   const node = sections.get(prefixSlug);
   if (!node) return [];
 
-  const direct: BlogWithSubPath[] = node.blogs.map((blog) => ({ blog, subPath: [] }));
-  const nested: BlogWithSubPath[] = Array.from(node.childSlugs).flatMap((childSlug) => {
+  const direct: JournalWithSubPath[] = node.journals.map((journal) => ({ journal, subPath: [] }));
+  const nested: JournalWithSubPath[] = Array.from(node.childSlugs).flatMap((childSlug) => {
     const childLabel = sections.get(childSlug)?.label ?? childSlug.split("/").pop()!;
-    return blogsInSubtree(sections, childSlug).map(({ blog, subPath }) => ({
-      blog,
+    return journalsInSubtree(sections, childSlug).map(({ journal, subPath }) => ({
+      journal,
       subPath: [childLabel, ...subPath],
     }));
   });

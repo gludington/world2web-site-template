@@ -3,7 +3,7 @@
 interface Item {
   title: string;
   href: string;
-  metaType?: 'section' | 'blog' | 'post';
+  metaType?: 'section' | 'journal' | 'post';
   authorName?: string;
   authorHref?: string;
   authorImage?: string;
@@ -42,7 +42,7 @@ const { title, items } = Astro.props;
                 </>
               )}
 
-              {/* 3. If it contains category subpaths (like BlogsInSection) */}
+              {/* 3. If it contains category subpaths (like JournalsInSection) */}
               {item.subLabels && item.subLabels.length > 0 && (
                 <> · in {item.subLabels.join(" / ")}</>
               )}

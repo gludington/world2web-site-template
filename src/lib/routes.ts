@@ -1,24 +1,24 @@
 import { getSiteConfig } from "./config";
 
 // Two distinct identities, deliberately not conflated:
-//  - "blog" = one journal entry. blogSlug is disambiguated (uuid suffix on
-//    collision) so it always maps to exactly one blog.
+//  - "journal" = one journal entry. journalSlug is disambiguated (uuid suffix on
+//    collision) so it always maps to exactly one journal.
 //  - "author" = a displayed author name. authorSlug is NOT disambiguated --
-//    multiple blogs sharing the same author name are meant to merge onto
+//    multiple journals sharing the same author name are meant to merge onto
 //    one author page. See assignSlugs() in the Foundry module's render.js
 //    or this repo's scripts/ingest.js -- both implement it identically.
 //
-// URLs are world-first: /<world>/<blogsSegment>/..., /<world>/authors/...,
-// /<world>/tags/.... blogsSegment is the one configurable piece (the
-// "Blogs URL Segment" Foundry setting, default "journals" -- see
+// URLs are world-first: /<world>/<journalsSegment>/..., /<world>/authors/...,
+// /<world>/tags/.... journalsSegment is the one configurable piece (the
+// "Journals URL Segment" Foundry setting, default "journals" -- see
 // lib/config.ts's getSiteConfig()); "authors"/"tags" are fixed literals,
 // only their position (now under the world) changed.
-interface BlogRef {
+interface JournalRef {
   world: string;
-  blogSlug: string;
+  journalSlug: string;
 }
 
-interface PostRef extends BlogRef {
+interface PostRef extends JournalRef {
   slug?: string;
 }
 
@@ -33,13 +33,13 @@ interface TagRef {
 }
 
 export function postRoute(post: PostRef): string {
-  const { blogsSegment } = getSiteConfig();
-  return `/${post.world}/${blogsSegment}/${post.blogSlug}/${post.slug}/`;
+  const { journalsSegment } = getSiteConfig();
+  return `/${post.world}/${journalsSegment}/${post.journalSlug}/${post.slug}/`;
 }
 
-export function blogRoute(blog: BlogRef): string {
-  const { blogsSegment } = getSiteConfig();
-  return `/${blog.world}/${blogsSegment}/${blog.blogSlug}/`;
+export function journalRoute(journal: JournalRef): string {
+  const { journalsSegment } = getSiteConfig();
+  return `/${journal.world}/${journalsSegment}/${journal.journalSlug}/`;
 }
 
 export function authorRoute(author: AuthorRef): string {
@@ -63,44 +63,44 @@ export interface Crumb {
   href: string;
 }
 
-/** Breadcrumb entries for a blog's root path, one per segment, each linking
- * to that segment's own section page (pages/[world]/[section]/[...blog].astro,
- * the "section" case) -- e.g. a root of "PCs/Act 1" on a blog whose
- * blogSlug is "pcs/act-1/some-blog" yields
- * [{label:"PCs", href:"/<world>/<blogsSegment>/pcs/"}, {label:"Act 1", href:"/<world>/<blogsSegment>/pcs/act-1/"}].
- * Deliberately doesn't need to re-slugify anything: blogSlug already has the
+/** Breadcrumb entries for a journal's root path, one per segment, each linking
+ * to that segment's own section page (pages/[world]/[section]/[...journal].astro,
+ * the "section" case) -- e.g. a root of "PCs/Act 1" on a journal whose
+ * journalSlug is "pcs/act-1/some-journal" yields
+ * [{label:"PCs", href:"/<world>/<journalsSegment>/pcs/"}, {label:"Act 1", href:"/<world>/<journalsSegment>/pcs/act-1/"}].
+ * Deliberately doesn't need to re-slugify anything: journalSlug already has the
  * root's slugified form as its own leading segments (assignSlugs built it
  * that way), in the same order and count as the raw root's own segments --
  * so this just re-pairs raw labels with the slug segments already sitting
- * in blogSlug. Returns [] when there's no root at all. */
-export function rootCrumbs(entry: { world: string; root: string | null; blogSlug: string }): Crumb[] {
+ * in journalSlug. Returns [] when there's no root at all. */
+export function rootCrumbs(entry: { world: string; root: string | null; journalSlug: string }): Crumb[] {
   if (!entry.root) return [];
   const labels = entry.root
     .split("/")
     .map((s) => s.trim())
     .filter(Boolean);
   if (labels.length === 0) return [];
-  const { blogsSegment } = getSiteConfig();
-  const slugParts = entry.blogSlug.split("/").slice(0, labels.length);
+  const { journalsSegment } = getSiteConfig();
+  const slugParts = entry.journalSlug.split("/").slice(0, labels.length);
   return labels.map((label, i) => ({
     label,
-    href: `/${entry.world}/${blogsSegment}/${slugParts.slice(0, i + 1).join("/")}/`,
+    href: `/${entry.world}/${journalsSegment}/${slugParts.slice(0, i + 1).join("/")}/`,
   }));
 }
 
-/** Same "/<world>/<blogsSegment>/<slug>/" shape as blogRoute(), for a
- * section prefix rather than a full blog slug -- used by ChildSections. */
+/** Same "/<world>/<journalsSegment>/<slug>/" shape as journalRoute(), for a
+ * section prefix rather than a full journal slug -- used by ChildSections. */
 export function sectionRoute(world: string, prefixSlug: string): string {
-  const { blogsSegment } = getSiteConfig();
-  return `/${world}/${blogsSegment}/${prefixSlug}/`;
+  const { journalsSegment } = getSiteConfig();
+  return `/${world}/${journalsSegment}/${prefixSlug}/`;
 }
 
-/** A world's own blog index -- /<world>/<blogsSegment>/ with no further
+/** A world's own journal index -- /<world>/<journalsSegment>/ with no further
  * path at all (pages/[world]/[section]/index.astro). Not just sectionRoute()
  * with an empty prefix: that would produce a trailing double slash. */
 export function worldIndexRoute(world: string): string {
-  const { blogsSegment } = getSiteConfig();
-  return `/${world}/${blogsSegment}/`;
+  const { journalsSegment } = getSiteConfig();
+  return `/${world}/${journalsSegment}/`;
 }
 
 export function formatDate(ms: number): string {

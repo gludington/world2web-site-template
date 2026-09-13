@@ -1,10 +1,10 @@
 ---
 import { getPublishedPosts } from "../lib/posts";
-import { toBlogInfos, buildSectionTree, topLevelSections } from "../lib/sections";
+import { toJournalInfos, buildSectionTree, topLevelSections } from "../lib/sections";
 import ContentPanel from "./ContentPanel.astro";
 import TagCloud from "./TagCloud.astro";
 import AuthorCloud from "./AuthorCloud.astro";
-import { postRoute, sectionRoute, blogRoute, authorRoute, formatDate } from "../lib/routes"; // Added formatDate
+import { postRoute, sectionRoute, journalRoute, authorRoute, formatDate } from "../lib/routes"; // Added formatDate
 
 interface Props {
   world: string;
@@ -13,28 +13,28 @@ interface Props {
 const { world } = Astro.props;
 
 // Sorted newest-first up front -- "Recent Posts" below depends on it, and
-// nothing else here cares about order (toBlogInfos groups by blogUuid;
+// nothing else here cares about order (toJournalInfos groups by journalUuid;
 // AuthorCloud/TagCloud only aggregate counts), so one sort covers every
 // consumer rather than sorting again just for the slice(0, 5).
 const allPosts = (await getPublishedPosts())
   .filter((post) => post.data.world === world)
   .sort((a, b) => b.data.publishedAt - a.data.publishedAt);
-const blogInfos = toBlogInfos(allPosts);
-const rootLevelBlogs = blogInfos.filter((b) => !b.root);
-const rootLevelSections = topLevelSections(buildSectionTree(blogInfos));
+const journalInfos = toJournalInfos(allPosts);
+const rootLevelJournals = journalInfos.filter((b) => !b.root);
+const rootLevelSections = topLevelSections(buildSectionTree(journalInfos));
 
-// 1. Map Recent Posts into ContentPanel Item structure (incorporating blog titles and proper formatting)
+// 1. Map Recent Posts into ContentPanel Item structure (incorporating journal titles and proper formatting)
 const recentPostsItems = allPosts.slice(0, 5).map((post) => ({
   title: post.data.title,
   href: postRoute(post.data),
   authorName: post.data.author?.name,
   authorHref: authorRoute(post.data),
-  subLabels: [post.data.blogTitle],
+  subLabels: [post.data.journalTitle],
   dateLabel: formatDate ? formatDate(post.data.publishedAt) : post.data.publishedAt,
   frontImage: post.data.frontImage
 }));
 
-// 2. Map Sections and Blogs into a single unified Browse panel array --
+// 2. Map Sections and Journals into a single unified Browse panel array --
 // no separate Search entry here anymore: the persistent header search box
 // (Layout.astro) already covers that on every page, including this one.
 const browseItems = [
@@ -43,12 +43,12 @@ const browseItems = [
     href: sectionRoute(s.world, s.slug),
     metaType: 'section' as const
   })),
-  ...rootLevelBlogs.map((blog) => ({
-    title: blog.blogTitle,
-    href: blogRoute(blog)
-    // No author here -- see BlogInfo's own doc comment (lib/sections.ts):
-    // a blog's posts can each have their own author now, so there's no
-    // single reliable one to show for the blog itself.
+  ...rootLevelJournals.map((journal) => ({
+    title: journal.journalTitle,
+    href: journalRoute(journal)
+    // No author here -- see JournalInfo's own doc comment (lib/sections.ts):
+    // a journal's posts can each have their own author now, so there's no
+    // single reliable one to show for the journal itself.
   }))
 ];
 ---

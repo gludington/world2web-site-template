@@ -8,11 +8,11 @@ import WorldIndex from "../components/WorldIndex.astro";
 // Single-world vs. multi-world sites shouldn't look the same: with exactly
 // one world, a "pick a world" step in front of it is a pointless extra
 // click, so the homepage just IS that world's index directly. With more
-// than one, pooling every world's blogs into one mixed feed (the old
+// than one, pooling every world's journals into one mixed feed (the old
 // behavior) reads as confusing rather than useful once campaigns are
 // genuinely unrelated -- so instead this becomes a world picker, and each
 // world's own index (also reachable at /worlds/, and at
-// /<world>/<blogsSegment>/ directly) is one click away.
+// /<world>/<journalsSegment>/ directly) is one click away.
 const siteName = getSiteConfig().siteName;
 const posts = await getPublishedPosts();
 const worlds = [...new Set(posts.map((post) => post.data.world))].sort();

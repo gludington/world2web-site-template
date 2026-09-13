@@ -5,8 +5,8 @@ import { authorRoute } from "../lib/routes";
 // Every author that currently has at least one post within whatever scope
 // the caller hands in -- mirrors TagCloud.astro's own approach and reasoning
 // almost exactly. authorSlug is world-scoped but deliberately NOT
-// disambiguated across blogs within a world (unlike blogSlug) -- several
-// blogs sharing the same displayed author name are meant to merge onto one
+// disambiguated across journals within a world (unlike journalSlug) -- several
+// journals sharing the same displayed author name are meant to merge onto one
 // author archive page, see assignSlugs() in the Foundry module's render.js
 // or this repo's scripts/ingest.js. So the dedup key here is world+authorSlug,
 // same as that archive page's own getStaticPaths. Takes posts as a prop,

@@ -2,9 +2,9 @@
 import Layout from "../../../../../layouts/Layout.astro";
 import { getSiteConfig } from "../../../../../lib/config";
 import { getPublishedPosts } from "../../../../../lib/posts";
-import { postRoute, blogRoute, authorRoute, tagRoute, rootCrumbs, formatDate } from "../../../../../lib/routes";
+import { postRoute, journalRoute, authorRoute, tagRoute, rootCrumbs, formatDate } from "../../../../../lib/routes";
 import { slugifyTag } from "../../../../../lib/tags";
-import { sortPostsForBlog } from "../../../../../lib/sections";
+import { sortPostsForJournal } from "../../../../../lib/sections";
 import { buildContentLinkMap, resolveContentLinks } from "../../../../../lib/relationships";
 import Breadcrumbs from "../../../../../components/Breadcrumbs.astro";
 import type { CollectionEntry } from "astro:content";
@@ -12,7 +12,7 @@ import type { CollectionEntry } from "astro:content";
 const siteName = getSiteConfig().siteName;
 
 export async function getStaticPaths() {
-  const { blogsSegment } = getSiteConfig();
+  const { journalsSegment } = getSiteConfig();
   // Not just filtering the listing -- excluding an unpublished post here
   // means it gets no generated page at all, so its old URL 404s on the
   // next deploy rather than staying reachable by direct link.
@@ -21,23 +21,23 @@ export async function getStaticPaths() {
   // comment.
   const uuidToTarget = buildContentLinkMap(posts);
 
-  const postsByBlogUuid = new Map<string, CollectionEntry<"posts">[]>();
+  const postsByJournalUuid = new Map<string, CollectionEntry<"posts">[]>();
   for (const post of posts) {
-    if (!postsByBlogUuid.has(post.data.blogUuid)) postsByBlogUuid.set(post.data.blogUuid, []);
-    postsByBlogUuid.get(post.data.blogUuid)!.push(post);
+    if (!postsByJournalUuid.has(post.data.journalUuid)) postsByJournalUuid.set(post.data.journalUuid, []);
+    postsByJournalUuid.get(post.data.journalUuid)!.push(post);
   }
 
   return posts.map((post) => {
-    // Same order as this blog's own archive page (sortPostsForBlog is
-    // shared with pages/[world]/[section]/[...blog].astro precisely so
+    // Same order as this journal's own archive page (sortPostsForJournal is
+    // shared with pages/[world]/[section]/[...journal].astro precisely so
     // "next" here always means the post appearing next there too) --
-    // every post in a blog shares that blog's postOrder, copied onto each
-    // post's own frontmatter at publish time, so no separate BlogInfo
+    // every post in a journal shares that journal's postOrder, copied onto each
+    // post's own frontmatter at publish time, so no separate JournalInfo
     // lookup is needed to sort correctly.
-    const siblings = sortPostsForBlog(postsByBlogUuid.get(post.data.blogUuid)!, post.data.postOrder);
+    const siblings = sortPostsForJournal(postsByJournalUuid.get(post.data.journalUuid)!, post.data.postOrder);
     const index = siblings.findIndex((p) => p.id === post.id);
     return {
-      params: { world: post.data.world, section: blogsSegment, blog: post.data.blogSlug, slug: post.data.slug },
+      params: { world: post.data.world, section: journalsSegment, journal: post.data.journalSlug, slug: post.data.slug },
       props: {
         post,
         uuidToTarget,
@@ -71,7 +71,7 @@ if (firstParagraphMatch && firstParagraphMatch[1]) {
 }
 const wasUpdated = post.data.updatedAt !== post.data.publishedAt;
 const crumbs = rootCrumbs(post.data).concat([
-  { label: post.data.blogTitle, href: blogRoute(post.data) },
+  { label: post.data.journalTitle, href: journalRoute(post.data) },
 ]);
 ---
 
@@ -83,12 +83,12 @@ const crumbs = rootCrumbs(post.data).concat([
        "Search" section and Layout.astro's `searchable` prop doc comment.
        Deliberately starts after Breadcrumbs (nav chrome, not content) and
        covers everything a visitor would actually want matched: the front
-       image, title, author, tags, and prose body. blog/world have no
+       image, title, author, tags, and prose body. journal/world have no
        visible element of their own on this page worth reusing, so they're
        hidden filter-only markers using Pagefind's explicit key:value
        attribute syntax rather than anything relying on visible text. -->
   <article data-pagefind-body>
-    <span hidden data-pagefind-filter={`blog:${post.data.blogTitle}`} />
+    <span hidden data-pagefind-filter={`journal:${post.data.journalTitle}`} />
     <span hidden data-pagefind-filter={`world:${post.data.world}`} />
 
     {post.data.frontImage && (
@@ -127,7 +127,7 @@ const crumbs = rootCrumbs(post.data).concat([
 
   <!-- Outside the indexed <article> above -- nav chrome, not unique
        content, same reasoning as this file's other pagefind comments.
-       Order matches this blog's own archive page (sortPostsForBlog is
+       Order matches this journal's own archive page (sortPostsForJournal is
        shared with that page precisely so the two never disagree). -->
   <nav class="post-nav" aria-label="Post navigation">
     {prevPost ? (
@@ -138,7 +138,7 @@ const crumbs = rootCrumbs(post.data).concat([
     ) : (
       <span class="post-nav-link prev disabled">
         <span class="post-nav-label">&larr; Previous</span>
-        <span class="post-nav-title">Start of {post.data.blogTitle}</span>
+        <span class="post-nav-title">Start of {post.data.journalTitle}</span>
       </span>
     )}
     {nextPost ? (
@@ -149,7 +149,7 @@ const crumbs = rootCrumbs(post.data).concat([
     ) : (
       <span class="post-nav-link next disabled">
         <span class="post-nav-label">Next &rarr;</span>
-        <span class="post-nav-title">End of {post.data.blogTitle}</span>
+        <span class="post-nav-title">End of {post.data.journalTitle}</span>
       </span>
     )}
   </nav>

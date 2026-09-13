@@ -12,18 +12,18 @@ const generateId = ({ entry }: { entry: string }) => entry.replace(/\.md$/, "");
 const postSchema = z.object({
   foundryUuid: z.string(),
   world: z.string(),
-  blogUuid: z.string(),
-  blogTitle: z.string(),
-  // blogSlug: unique per journal entry (disambiguated on collision) -- the
-  // single-blog archive/permalink identity. authorSlug: shared across every
-  // blog with the same displayed author name, deliberately NOT
-  // disambiguated -- the cross-blog author archive identity. See
+  journalUuid: z.string(),
+  journalTitle: z.string(),
+  // journalSlug: unique per journal entry (disambiguated on collision) -- the
+  // single-journal archive/permalink identity. authorSlug: shared across every
+  // journal with the same displayed author name, deliberately NOT
+  // disambiguated -- the cross-journal author archive identity. See
   // assignSlugs() in the Foundry module's render.js or this repo's
   // scripts/ingest.js (both implement it identically) for why these are
   // kept distinct.
-  blogSlug: z.string(),
+  journalSlug: z.string(),
   // Raw (unslugified) root text, e.g. "PCs/Act 1" -- the slugified version
-  // is already folded into blogSlug's prefix; this is kept separately for
+  // is already folded into journalSlug's prefix; this is kept separately for
   // human-readable breadcrumb/section labels. null when there's no root.
   root: z.string().nullable(),
   title: z.string(),
@@ -47,7 +47,7 @@ const postSchema = z.object({
   // never auto-derived from the post's own body content. .default("") so
   // posts published before this field existed still validate.
   frontImage: z.string().default(""),
-  // This blog's own post-archive listing order -- every other listing
+  // This journal's own post-archive listing order -- every other listing
   // site-wide (recent posts, author/tag archives) always shows
   // newest-published-first regardless of this value. "manual" (the
   // default) means the exact order pages appear in Foundry's own page
@@ -61,7 +61,7 @@ const postSchema = z.object({
   // .default(0) so posts published before this field existed still
   // validate (they'll all tie at 0 under "manual", falling back to
   // whatever order Array.sort leaves them in -- harmless, since "manual"
-  // has to be deliberately chosen per blog anyway).
+  // has to be deliberately chosen per journal anyway).
   sortIndex: z.number().default(0),
   publishedAt: z.number(),
   updatedAt: z.number(),
@@ -75,17 +75,17 @@ const postSchema = z.object({
 });
 
 export const collections = {
-  // content/worlds/<world-slug>/blogs/<blog-slug>/<post-slug>.md, where
-  // <blog-slug> can itself be more than one path segment (a root path
-  // prefix followed by the blog's own slug, e.g. "arc-1/session-notes") --
-  // "**" rather than a single "*" between blogs/ and the filename, to match
+  // content/worlds/<world-slug>/journals/<journal-slug>/<post-slug>.md, where
+  // <journal-slug> can itself be more than one path segment (a root path
+  // prefix followed by the journal's own slug, e.g. "arc-1/session-notes") --
+  // "**" rather than a single "*" between journals/ and the filename, to match
   // any depth there, not just exactly one directory.
   posts: defineCollection({
     // Relative to the project root (this repo), not to this file's own
     // src/ directory -- content/ now lives inside this same repo
     // (world2web-site-template), not as a sibling one level up like it did
     // when the site was still developed inside the world2web dev repo.
-    loader: glob({ pattern: "*/blogs/**/*.md", base: "content/worlds", generateId }),
+    loader: glob({ pattern: "*/journals/**/*.md", base: "content/worlds", generateId }),
     schema: postSchema,
   }),
 };

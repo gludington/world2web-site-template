@@ -20,12 +20,12 @@ declare const __WORLD2WEB_CONTENT_DIR__: string;
 const CONFIG_PATH = path.join(__WORLD2WEB_CONTENT_DIR__, "site-config.json");
 
 const DEFAULT_SITE_NAME = "World2Web";
-const DEFAULT_BLOGS_SEGMENT = "journals";
+const DEFAULT_JOURNALS_SEGMENT = "journals";
 
 /** The configured URL segment name gets slugified here, once, regardless
  * of what the GM actually typed into the Foundry setting -- unlike
  * siteName/theme (plain text, never embedded in a URL), this one becomes a
- * literal path segment on every blog/post URL, so it has to be URL-safe no
+ * literal path segment on every journal/post URL, so it has to be URL-safe no
  * matter what. */
 function slugifySegment(value: string, fallback: string): string {
   const slug = value
@@ -41,14 +41,14 @@ function slugifySegment(value: string, fallback: string): string {
 export interface SiteConfig {
   theme: string;
   siteName: string;
-  blogsSegment: string;
+  journalsSegment: string;
   allowThemeOverride: boolean;
 }
 
 const DEFAULT_SITE_CONFIG: SiteConfig = {
   theme: "default",
   siteName: DEFAULT_SITE_NAME,
-  blogsSegment: DEFAULT_BLOGS_SEGMENT,
+  journalsSegment: DEFAULT_JOURNALS_SEGMENT,
   allowThemeOverride: false,
 };
 
@@ -60,12 +60,12 @@ export function getSiteConfig(): SiteConfig {
     const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
     const theme = typeof raw.theme === "string" && raw.theme.trim() ? raw.theme.trim() : "default";
     const siteName = typeof raw.siteName === "string" && raw.siteName.trim() ? raw.siteName.trim() : DEFAULT_SITE_NAME;
-    const blogsSegment =
-      typeof raw.blogsSegment === "string" && raw.blogsSegment.trim()
-        ? slugifySegment(raw.blogsSegment, DEFAULT_BLOGS_SEGMENT)
-        : DEFAULT_BLOGS_SEGMENT;
+    const journalsSegment =
+      typeof raw.journalsSegment === "string" && raw.journalsSegment.trim()
+        ? slugifySegment(raw.journalsSegment, DEFAULT_JOURNALS_SEGMENT)
+        : DEFAULT_JOURNALS_SEGMENT;
     const allowThemeOverride = raw.allowThemeOverride === true;
-    return { theme, siteName, blogsSegment, allowThemeOverride };
+    return { theme, siteName, journalsSegment, allowThemeOverride };
   } catch {
     return DEFAULT_SITE_CONFIG;
   }

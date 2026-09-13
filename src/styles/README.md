@@ -9,7 +9,7 @@ Two files, plus component-local styles:
   reusable class, all as `var(--color-...)` references. It does **not** own layout/spacing for
   most components anymore — see "Where structural CSS lives" below.
 - **Component-local `<style>` blocks** — `ContentPanel.astro`, `Breadcrumbs.astro`,
-  `Pagination.astro`, and a few page files (`[...blog].astro`, the tag archive page) each carry
+  `Pagination.astro`, and a few page files (`[...journal].astro`, the tag archive page) each carry
   their own scoped `<style>` for structural layout (flex/grid, gaps, margins). The intent (see
   `Pagination.astro`'s own comment): "Keep the structural flex/grid containers local to the
   layout element! The visual tokens (borders, fonts, colors) stay inherited from base.css."
@@ -101,10 +101,10 @@ for how one gets selected.
 
 - **`ContentPanel.astro`** — generic `{title, items[]}` renderer for any "list of linked things
   with optional author/date/section metadata" panel. Replaces the previously-separate
-  `BlogFeed.astro`, `BlogsAtLevel.astro`, `BlogsInSection.astro`, `ChildSections.astro`, and
+  `JournalFeed.astro`, `JournalsAtLevel.astro`, `JournalsInSection.astro`, `ChildSections.astro`, and
   `RecentPosts.astro` (all now deleted) with one component driven by a plain `Item[]` array each
   caller builds from its own data.
 - **`Breadcrumbs.astro`** — `{siteName, crumbs[], currentLabel?}`, replacing the inline
   `<nav class="crumbs">...</nav>` markup previously duplicated in every page file.
 - **`Pagination.astro`** — `{prevUrl, nextUrl, pageNum, totalPages}`, replacing inline
-  `<nav class="pagination">` markup. Adopted in the blog, tag, and author archive pages.
+  `<nav class="pagination">` markup. Adopted in the journal, tag, and author archive pages.
