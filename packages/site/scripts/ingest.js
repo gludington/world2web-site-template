@@ -32,7 +32,6 @@
 import { readFile, rm, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 function slugify(str) {
   const slug = String(str ?? "")
@@ -169,12 +168,14 @@ async function main() {
   const contentDirArg = contentDirFlagIdx >= 0 ? args[contentDirFlagIdx + 1] : null;
 
   if (!payloadPath) {
-    console.error("Usage: node scripts/ingest.js <path-to-collector-payload.json> [--content-dir <dir>]");
+    console.error("Usage: world2web-ingest <path-to-collector-payload.json> [--content-dir <dir>]  (run from your site repo's root)");
     process.exit(1);
   }
 
-  const repoRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
-  const contentDir = contentDirArg ? path.resolve(contentDirArg) : path.join(repoRoot, "content");
+  // Run from the site repo's root (as `world2web-ingest`, installed with
+  // @world2web/site), so content/ is relative to the current directory --
+  // not to this script, which now lives inside node_modules.
+  const contentDir = contentDirArg ? path.resolve(contentDirArg) : path.join(process.cwd(), "content");
 
   const raw = await readFile(path.resolve(payloadPath), "utf-8");
   const payload = JSON.parse(raw);

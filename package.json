@@ -1,21 +1,17 @@
 {
-  "name": "world2web-site",
+  "name": "world2web-site-workspace",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@10.19.0",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build && pagefind --site dist",
-    "preview": "astro preview",
-    "preview:search": "npm run build && astro preview",
-    "sync": "astro sync",
-    "ingest": "node scripts/ingest.js"
+    "dev": "pnpm --filter world2web-starter dev",
+    "build": "pnpm --filter world2web-starter build",
+    "preview": "pnpm --filter world2web-starter preview"
   },
-  "dependencies": {
-    "astro": "^7.2.4"
-  },
-  "devDependencies": {
-    "pagefind": "^1.5.2",
-    "wrangler": "^4.0.0"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
   }
 }
