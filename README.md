@@ -40,6 +40,9 @@ npm install
 npm run dev
 ```
 
+Search needs a full build, so it's empty in `npm run dev`. Run `npm run dev:search` instead: it
+builds once and the dev server uses that build's search index (rerun it to pick up new posts).
+
 To try content without publishing: turn on **Enable Dev Mode** in World2Web's settings, click
 **Dev Sync** in Foundry, then run `npx world2web-ingest ~/Downloads/world2web-....json` here.
 
