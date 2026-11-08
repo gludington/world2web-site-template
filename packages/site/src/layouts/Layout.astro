@@ -36,7 +36,7 @@ const isSearchPage = Astro.url.pathname === searchRoute();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} · {siteConfig.siteName}</title>
+    <title>{title === siteConfig.siteName ? title : `${title} · ${siteConfig.siteName}`}</title>
     {/* Visitor override is opt-in (Foundry's "Allow Visitor Theme
         Override" setting) -- when it's off, Site Theme is authoritative
         for everyone and neither this script nor the picker below ships at

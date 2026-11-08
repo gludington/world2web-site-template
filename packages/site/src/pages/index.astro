@@ -21,7 +21,23 @@ const worlds = [...new Set(posts.map((post) => post.data.world))].sort();
 <Layout title={siteName}>
   <h1 class="site-title">{siteName}</h1>
   {
-    worlds.length <= 1 ? (
+    posts.length === 0 ? (
+      // A fresh site before its first Publish to Web. Shown instead of an
+      // empty index so a new user's first deploy visibly works -- and so
+      // this URL is clearly "your site", ready to share.
+      <section class="panel">
+        <h2 class="panel-title">Your site is ready</h2>
+        <p>
+          This site was built from the World2Web template and is live. It's empty because nothing
+          has been published from Foundry yet.
+        </p>
+        <p>
+          In Foundry, finish the World2Web Setup Wizard, mark a journal as published, publish a
+          page, then click <strong>Publish to Web</strong>. Your posts will show up here a few
+          minutes later, once your host rebuilds.
+        </p>
+      </section>
+    ) : worlds.length <= 1 ? (
       <WorldIndex world={worlds[0] ?? ""} />
     ) : (
       <section class="panel">
