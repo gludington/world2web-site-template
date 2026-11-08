@@ -1,17 +1,18 @@
 {
-  "name": "world2web-site-workspace",
+  "name": "my-world2web-site",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.19.0",
   "scripts": {
-    "dev": "pnpm --filter world2web-starter dev",
-    "build": "pnpm --filter world2web-starter build",
-    "preview": "pnpm --filter world2web-starter preview"
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "ingest": "world2web-ingest"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "workerd"
-    ]
+  "dependencies": {
+    "@world2web/site": "1.0.0",
+    "astro": "7.2.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }

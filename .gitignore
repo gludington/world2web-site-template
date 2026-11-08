@@ -1,5 +1,4 @@
 node_modules/
-content/
 dist/
 .astro/
 .wrangler/
