@@ -63,6 +63,14 @@ const postSchema = z.object({
   // whatever order Array.sort leaves them in -- harmless, since "manual"
   // has to be deliberately chosen per journal anyway).
   sortIndex: z.number().default(0),
+  // Journal-level, copied onto each post like postOrder: whether this
+  // journal is featured on its world's index page (the site homepage on a
+  // single-world site) -- "above" or "replace" Recent Posts -- or not.
+  // Per world by construction: each world's posts live under their own
+  // content/worlds/<world>/, so worlds publishing to one site can't
+  // overwrite each other's choice. .default("none") so posts published
+  // before this field existed still validate.
+  homepage: z.enum(["none", "above", "replace"]).default("none"),
   publishedAt: z.number(),
   updatedAt: z.number(),
   // Soft-delete tombstone: true once a previously-published post is
