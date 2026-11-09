@@ -10,7 +10,7 @@
     "ingest": "world2web-ingest"
   },
   "dependencies": {
-    "@world2web/site": "0.21.0",
+    "@world2web/site": "0.22.0",
     "astro": "7.2.4"
   },
   "devDependencies": {
